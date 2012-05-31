@@ -74,6 +74,5 @@
 	path = vim/bundle/vitality
     url = https://github.com/tangledhelix/vitality.vim.git
 [submodule "vim/bundle/taskpaper"]
-    path = vim/bundle/taskpaper
-    url = https://github.com/davidoc/taskpaper.vim.git
-
+	path = vim/bundle/taskpaper
+	url = https://github.com/davidoc/taskpaper.vim.git
