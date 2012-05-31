@@ -72,4 +72,8 @@
 	url = https://github.com/tomtom/tcomment_vim.git
 [submodule "vim/bundle/vitality"]
 	path = vim/bundle/vitality
-	url = https://github.com/tangledhelix/vitality.vim.git
+    url = https://github.com/tangledhelix/vitality.vim.git
+[submodule "vim/bundle/taskpaper"]
+    path = vim/bundle/taskpaper
+    url = https://github.com/davidoc/taskpaper.vim.git
+
