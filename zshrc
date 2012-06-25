@@ -58,11 +58,32 @@ ssh() {
   else
     /usr/bin/ssh $@
   fi
-  printf "\x1b]2;$(uname -n)\x07\x1b]1;$(uname -n)\x07"
+  set-tab-title $(uname -n)
 }
 
-# always unicode in tmux
-test -n "$(command -v tmux)" && alias tmux="tmux -u"
+if [[ -n "$(command -v tmux)" ]]; then
+  alias tmux='tmux -u'
+  alias tls='tmux ls'
+
+  tnew() {
+    test -z "$1" && { echo 'missing session name'; return }
+    set-tab-title "tmux:$1"
+    tmux -u new -s $1
+    set-tab-title $(uname -n)
+  }
+
+  tatt() {
+    test -z "$1" && { echo 'missing session name'; return }
+    set-tab-title "tmux:$1"
+    tmux -u attach -t $1
+    set-tab-title $(uname -n)
+  }
+
+fi
+
+alias vi='vim'
+alias view='vim -R'
+alias vimdiff='vimdiff -O'
 
 alias c='clear'
 alias ppv='puppet parser validate'
@@ -103,7 +124,8 @@ perlmodver() {
 
 # sleep this long, then beep
 beep() {
-  local __timer=$1
+  local __timer=0
+  test -n "$1" && __timer=$1
   until [[ $__timer = 0 ]]; do
     printf "  T minus $__timer     \r"
     __timer=$((__timer - 1))
@@ -120,18 +142,31 @@ mkpuppetmodule() {
   printf "\nclass $1 {\n\n}\n\n" > init.pp
 }
 
+# make a project directory
+mkproj() {
+  test -n "$1" || { echo "missing argument"; return }
+  local _dir
+  local _date=$(date +"%Y%m%d")
+  local _name="$1"
+  local _suffix
+  test -n "$2" && _suffix="-${2}"
+  _dir="${_date}-${_name}${_suffix}"
+  test -d ~/$_dir && { echo "already exists!"; return }
+  mkdir ~/$_dir && cd ~/$_dir
+}
+
 # fix ssh variables inside tmux
-function fixssh() {
-  local __new
+fixssh() {
+  local _new
   if [[ -n "$TMUX" ]]; then
-    __new=$(tmux showenv | grep ^SSH_CLIENT | cut -d = -f 2)
-    [[ -n "$__new" ]] && export SSH_CLIENT="$__new"
-    __new=$(tmux showenv | grep ^SSH_TTY | cut -d = -f 2)
-    [[ -n "$__new" ]] && export SSH_TTY="$__new"
-    __new=$(tmux showenv | grep ^SSH_CONNECTION | cut -d = -f 2)
-    [[ -n "$__new" ]] && export SSH_CONNECTION="$__new"
-    __new=$(tmux showenv | grep ^SSH_AUTH_SOCK | cut -d = -f 2)
-    [[ -n "$__new" && -S "$__new" ]] && export SSH_AUTH_SOCK="$__new"
+    _new=$(tmux showenv | grep ^SSH_CLIENT | cut -d = -f 2)
+    [[ -n "$_new" ]] && export SSH_CLIENT="$_new"
+    _new=$(tmux showenv | grep ^SSH_TTY | cut -d = -f 2)
+    [[ -n "$_new" ]] && export SSH_TTY="$_new"
+    _new=$(tmux showenv | grep ^SSH_CONNECTION | cut -d = -f 2)
+    [[ -n "$_new" ]] && export SSH_CONNECTION="$_new"
+    _new=$(tmux showenv | grep ^SSH_AUTH_SOCK | cut -d = -f 2)
+    [[ -n "$_new" && -S "$_new" ]] && export SSH_AUTH_SOCK="$_new"
   fi
 }
 
@@ -150,6 +185,12 @@ alias rpmgroups="cat /usr/share/doc/rpm-*/GROUPS"
 alias tailpa="tail -F /var/log/daemon/debug | grep puppet-agent"
 alias tailpm="tail -F /var/log/daemon/debug | grep puppet-master"
 
+# Get my current public IP
+alias get-ip="curl --silent http://icanhazip.com"
+
+# less with no-wrap (oh-my-zsh default, could be useful sometimes)
+alias less-nowrap="less -S"
+
 if [[ $UID -eq 0 ]]; then
 
   ### Things to do only if I am root
@@ -161,8 +202,7 @@ else
 
   ### Things to do only if I am not root
 
-  # set title to hostname
-  printf "\x1b]2;$(uname -n)\x07\x1b]1;$(uname -n)\x07"
+  set-tab-title $(uname -n)
 
   test -f ~/.rbenv/bin/rbenv && eval "$(rbenv init -)"
 
@@ -187,7 +227,9 @@ else
 
   # List tmux sessions
   if [[ -n "$(command -v tmux)" && -z "$TMUX" ]]; then
-    tmux ls 2>/dev/null
+    if [[ -n "$(tmux ls 2>/dev/null)" ]]; then
+      echo "\n\x1b[1;35m-- tmux sessions --\n$(tmux ls 2>/dev/null)\x1b[0m"
+    fi
   fi
 
 fi
