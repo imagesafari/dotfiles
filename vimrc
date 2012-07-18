@@ -259,10 +259,10 @@ if exists('s:has_darwin')
   " nnoremap <Leader>v :set paste<CR>"*p:set nopaste<CR>
   " vnoremap <Leader>v :set paste<CR>"*p:set nopaste<CR>
 else
-  nnoremap <Leader>c :echo 'Only supported on Mac'<CR>
-  vnoremap <Leader>c :echo 'Only supported on Mac'<CR>
-  nnoremap <Leader>v :echo 'Only supported on Mac'<CR>
-  vnoremap <Leader>v :echo 'Only supported on Mac'<CR>
+  nnoremap <Leader>c :echoerr 'Only supported on Mac'<CR>
+  vnoremap <Leader>c :echoerr 'Only supported on Mac'<CR>
+  nnoremap <Leader>v :echoerr 'Only supported on Mac'<CR>
+  vnoremap <Leader>v :echoerr 'Only supported on Mac'<CR>
 endif
 
 " ------------------------------------------------------------------------ }}}
@@ -285,11 +285,9 @@ nnoremap <Leader>W :call Preserve('%s/\s\+$//e')<CR>
 nnoremap <silent> <Leader>' :call Preserve("normal cs\"'")<CR>
 nnoremap <silent> <Leader>" :call Preserve("normal cs'\"")<CR>
 
-" Bubble line or selection
-nmap <S-Up>   [e
-nmap <S-Down> ]e
-vmap <S-Up>   [egv
-vmap <S-Down> ]egv
+" Bubble selection
+vmap K [egv
+vmap J ]egv
 
 " Remap ~ to cycle through uppercase, lowercase, title-case.
 vnoremap ~ ygv"=TwiddleCase(@")<CR>Pgv
@@ -378,7 +376,7 @@ endif
 if has('python')
   nnoremap <Leader>u :GundoToggle<CR>
 else
-  nnoremap <Leader>u :echo 'Gundo requires Python support'<CR>
+  nnoremap <Leader>u :echoerr 'Gundo requires Python support'<CR>
 endif
 
 let g:Powerline_cache_file = $HOME . '/.vim/tmp/Powerline.cache'
@@ -529,9 +527,9 @@ set helpheight=0
 " Open a new tab in the current view.
 nnoremap <silent> <Leader>t :tabnew<CR>
 
-" Navigate left/right through tabs using shift + left/right arrow keys.
-nnoremap <silent> <S-Left>  :tabprevious<CR>
-nnoremap <silent> <S-Right> :tabnext<CR>
+" Navigate left/right through tabs using ^H, ^L
+nnoremap <C-h> :tabprevious<CR>
+nnoremap <C-l> :tabnext<CR>
 
 " Resize splits when the window is resized.
 autocmd VimResized * :wincmd =
@@ -577,6 +575,10 @@ nnoremap <Leader>e :edit .<CR>
 
 " Shell to use. Stick with the old standard.
 let &shell='/bin/sh'
+
+" Execute the current line via the default shell, replacing the line with
+" the resulting output.
+nnoremap <silent> <Leader>X :echo 'Executing...'<CR>:execute ':.!' . &shell<CR>
 
 " Automatically save modifications to files when you use
 " critical (external) commands.
@@ -643,7 +645,7 @@ if has('gui_running')
   set antialias
 endif
 
-set background=light
+set background=dark
 colorscheme solarized
 
 " Mark trailing whitespace with red to make it stand out.

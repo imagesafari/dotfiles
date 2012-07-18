@@ -9,7 +9,7 @@
 zstyle ':omz:module:editor' keymap 'vi'
 
 # Auto convert .... to ../..
-zstyle ':omz:module:editor' dot-expansion 'yes'
+zstyle ':omz:module:editor' dot-expansion 'no'
 
 # Set case-sensitivity for completion, history lookup, etc.
 zstyle ':omz:*:*' case-sensitive 'no'
@@ -108,7 +108,7 @@ alias os='uname -srm'
 
 hw() {
   [[ "$(uname -s)" != 'SunOS' ]] && { echo 'This is not Solaris...'; return }
-  /usr/platform/`uname -m`/sbin/prtdiag | head -1 | \
+  /usr/platform/$(uname -m)/sbin/prtdiag | /usr/bin/head -1 | \
     sed 's/^System Configuration: *Sun Microsystems *//' | \
     sed 's/^$(uname -m) *//'
 }
@@ -147,7 +147,8 @@ mkpuppetmodule() {
 
 # make a project directory
 mkproj() {
-  [[ -n "$1" ]] || { echo 'missing argument'; return }
+  local _usage='Usage: mkproj <desc> [<ticket>]'
+  [[ -z "$1" || "$1" =~ '^(-h|--help)' ]] && { echo $_usage; return }
   local _dir
   local _date=$(date +'%Y%m%d')
   local _name="$1"
@@ -156,6 +157,37 @@ mkproj() {
   _dir="${_date}-${_name}${_suffix}"
   [[ -d ~/$_dir ]] && { echo 'already exists!'; return }
   mkdir ~/$_dir && cd ~/$_dir
+}
+
+# find a project directory
+proj() {
+  local _usage='Usage: proj [<pattern>]'
+  [[ "$1" =~ '^(-h|--help)' ]] && { echo $_usage; return }
+  # If there's no pattern, go to the most recent project.
+  [[ -z "$1" ]] && { cd ~/(19|20)[0-9][0-9][01][0-9][0-3][0-9]-*(/om[1]); return }
+  local _this
+  local _choice=0
+  local _index=1
+  local _projects
+  typeset -a _projects
+  _projects=()
+  for _this in ~/(19|20)[0-9][0-9][01][0-9][0-3][0-9]-*$1*; do
+    [[ -d $_this ]] && _projects+=$_this
+  done 2>/dev/null
+  [[ $#_projects -eq 0 ]] && { echo 'No match.'; return }
+  [[ $#_projects -eq 1 ]] && { cd $_projects[1]; return }
+  for _this in $_projects[1,-2]; do
+    echo "  [$_index] $(basename $_this)"
+    _index=$(( $_index + 1 ))
+  done
+  echo "* [$_index] \e[0;31;47m$(basename $_projects[-1])\e[0m"
+  echo
+  until [[ $_choice -ge 1 && $_choice -le $#_projects ]]; do
+    printf 'select> '
+    read _choice
+    [[ -z "$_choice" ]] && { cd $_projects[-1]; return }
+  done
+  cd $_projects[$_choice]
 }
 
 # fix ssh variables inside tmux
@@ -231,7 +263,7 @@ else
   # List tmux sessions
   if [[ -n "$(command -v tmux)" && -z "$TMUX" ]]; then
     if [[ -n "$(tmux ls 2>/dev/null)" ]]; then
-      echo "\n\x1b[1;35m-- tmux sessions --\n$(tmux ls 2>/dev/null)\x1b[0m"
+      echo "\n\x1b[1;37m-- tmux sessions --\n$(tmux ls 2>/dev/null)\x1b[0m"
     fi
   fi
 
@@ -239,4 +271,7 @@ fi
 
 # local settings override global ones
 [[ -s $HOME/.zshrc.local ]] && source $HOME/.zshrc.local
+
+# Make the prompt happy so I don't have $? true on every load
+__zsh_load_complete=1
 
